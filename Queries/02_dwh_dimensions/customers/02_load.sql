@@ -1,4 +1,5 @@
--- Elimina solo los registros que ya existen
+-- Limpieza previa: elimina los registros con customerID ya existentes para evitar duplicados
+
 DELETE FROM DWH_Dim_Customers
 WHERE customerID IN (SELECT customerID FROM TMP_Customers);
 
