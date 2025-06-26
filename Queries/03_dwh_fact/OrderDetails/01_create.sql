@@ -3,6 +3,8 @@
 DROP TABLE IF EXISTS DWH_Fact_OrderDetails;
 
 -- Creación de la tabla de hechos de detalles de pedidos (nivel pedido-producto)
+-- Se incluyen metricas principales: cantidad, precio, descuento
+-- Se agrega totalPrice calculado para facilitar reportes de ingresos
 
 CREATE TABLE DWH_Fact_OrderDetails (
   orderID INTEGER,                -- Identificador del pedido (FK a DWH_Fact_Orders)
