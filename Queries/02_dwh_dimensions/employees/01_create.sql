@@ -1,6 +1,6 @@
 -- Creación de tabla dimensional para empleados
 
-CREATE TABLE IF NOT EXISTS DWH_Dim_Employees (
+CREATE TABLE DWH_Dim_Employees (
   employeeID INTEGER PRIMARY KEY,
   lastName TEXT,
   firstName TEXT,
