@@ -12,8 +12,9 @@ Data Warehouse implementado en SQLite con datos de Northwind y archivo de paíse
 ### Scripts SQL
 
 #### 1. Adquisición
-- `tmp_area_ddl_script.sql`: Creación de tablas temporales (staging)
+- `tmp_area_ddl_script.sql`: Creación de 12 tablas temporales con FK
 - `tmp_area_employees_fix.sql`: Corrección de datos de empleados
+- `controles_ingesta_inicial.sql`: Verificación post-carga de CSV
 
 #### 2. Metadata
 - `01_metadata_esquema.sql`: Creación de tablas de metadata
@@ -36,12 +37,12 @@ Dimensiones implementadas:
 - `OrderDetails/`: Tabla de hechos a nivel producto por pedido
 
 #### 5. Controles de Calidad
-- `01_calidad_ingesta.sql`: Validaciones de datos individuales
-- `02_calidad_integracion.sql`: Validaciones de integridad referencial
+- `01_calidad_ingesta.sql`: Completitud, formatos, outliers, unicidad
+- `02_calidad_integracion.sql`: Integridad referencial, consistencia de datos
 
-#### 6. Capas Avanzadas
-- `01_capa_memoria.sql`: Tablas para versionado histórico
-- `02_capa_enriquecimiento.sql`: Métricas calculadas y datos derivados
+#### 6. Capas Avanzadas  
+- `01_capa_memoria.sql`: Versionado histórico con fechas de vigencia
+- `02_capa_enriquecimiento.sql`: Analytics de clientes y productos, vistas consolidadas
 
 #### 7. Validaciones y Consultas
 - `01_check_integridad_referencial.sql`: Verificación de consistencia
@@ -54,30 +55,38 @@ Dimensiones implementadas:
 - Tipos: TMP_, DWH_, DQM_, MEM_, ENR_
 
 ### DQM (Control de Calidad)
-- Registro de procesos
-- Indicadores con umbrales
-- Estadisticas de datos
+- 4 tablas: Procesos, Indicadores, Descriptivos, Reglas
+- Umbrales configurables (95-100% completitud, 98% formatos)
+- Decisiones automaticas de procesamiento
 
 ### Memoria
-- Historial de cambios en datos
+- Historial con fechas de vigencia para Customers, Products, Employees
+- Versionado temporal de cambios
 
 ### Enriquecimiento
-- Metricas calculadas de clientes y productos
-- Vistas para analisis
+- Customer Analytics: tiers, actividad, métricas por país
+- Product Analytics: popularidad, ventas, estado
+- Vistas: Customer_360, Top_Products_By_Category
 
 ## Base de Datos
 - `dw-tp-grupo10.db`: Base de datos principal del DWH
 - `bkg1_dw-tp-grupo10.db`: Respaldo
 
+## Puntos de Consigna Completados
+- **1-4:** Análisis CSV, área temporal, FK, vinculación países
+- **5:** Sistema completo de metadata
+- **6:** Modelo dimensional + capas memoria y enriquecimiento  
+- **7:** DQM con 4 tablas y controles automatizados
+- **8a-8c:** Controles de calidad + carga incremental al DWH
+
 ## Orden de Ejecución
-1. Crear área temporal (Adquisición)
-2. Cargar datos CSV en tablas temporales
-3. Ejecutar metadata y DQM
-4. Crear y cargar dimensiones
-5. Crear y cargar hechos
-6. Ejecutar controles de calidad
-7. Implementar capas de memoria y enriquecimiento
-8. Ejecutar validaciones finales
+1. Crear tablas DQM, memoria, enriquecimiento
+2. Actualizar metadata completa
+3. Ejecutar controles de calidad (verificar umbrales)
+4. Cargar dimensiones en orden de dependencias
+5. Cargar tablas de hechos
+6. Materializar capas de enriquecimiento
+7. Ejecutar validaciones finales
 
 ## Tecnología
 - DBMS: SQLite
