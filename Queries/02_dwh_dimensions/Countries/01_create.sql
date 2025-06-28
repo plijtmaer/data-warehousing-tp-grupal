@@ -1,6 +1,6 @@
 -- Creación de tabla dimensional para países enriquecidos
 
-CREATE TABLE DWH_Dim_Countries (
+CREATE TABLE IF NOT EXISTS DWH_Dim_Countries (
   country TEXT PRIMARY KEY,
   population TEXT,
   gdp TEXT,
