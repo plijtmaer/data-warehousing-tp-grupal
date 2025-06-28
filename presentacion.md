@@ -523,3 +523,26 @@ La implementación alcanzó nivel **enterprise-grade** cumpliendo estándares de
 - ✅ Business Value (20+ insights de negocio generados)
 - ✅ **Data Protection (protección contra corrupción)** **- DEMOSTRADO**
 - ✅ **Error Recovery (operación segura ante fallos)** **- DEMOSTRADO** 
+
+
+## Punto 10: Publicación de Productos de Datos  
+**Archivo:** `08_productos_datos/DP0X*/` (carpeta por producto)
+
+Se desarrollaron y publicaron ocho productos de datos analíticos a partir del Data Warehouse (DWH), generados mediante consultas SQL estructuradas sobre las tablas de hechos y dimensiones del modelo estrella. Cada producto fue diseñado para responder a una necesidad específica del negocio, con orientación directa a visualización estratégica.
+
+La publicación de los productos se estructuró con tres componentes por cada uno:  
+- `01_create.sql`: creación y carga desde el DWH  
+- `02_metadata.sql`: documentación técnica y funcional en las tablas `MET_Tablas` y `MET_Campos`  
+- `03_dqm.sql`: registro del proceso en `DQM_Procesos`, incluyendo trazabilidad, cantidad de registros generados y validación de éxito
+
+**Productos generados:**  
+- `DP01_VentasPorCategoriaYPais`: permite analizar montos y cantidades vendidas por categoría y país  
+- `DP02_PedidosPorEmpleado`: muestra la distribución de pedidos gestionados por cada empleado  
+- `DP03_Top10ProductosVendidos`: identifica los productos con mayor volumen de ventas  
+- `DP04_EvolucionMensualPedidos`: refleja la evolución de pedidos por año y mes  
+- `DP05_ClientesTopPorIngresos`: muestra los clientes con mayor facturación acumulada  
+- `DP06_DemoraPromedioEntregaPorPais`: calcula el tiempo promedio de entrega por país  
+- `DP07_FrecuenciaPedidosPorCliente`: mide la recurrencia de compra por cliente  
+- `DP08_PorcentajeEntregasRapidasPorPais`: indica el porcentaje de pedidos entregados en 5 días o menos
+
+Todos los productos fueron correctamente documentados en metadata y registrados en el sistema de calidad `DQM_Procesos`, asegurando integridad, trazabilidad y auditabilidad completa del flujo de publicación. Este punto representa la consolidación de las capas analíticas del DWH y la preparación final de los insumos que serán utilizados en la visualización estratégica desarrollada en el Punto 11.
