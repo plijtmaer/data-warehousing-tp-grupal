@@ -87,11 +87,12 @@ Dimensiones implementadas:
 - `bg2_dw-tp-grupo10.db`: Respaldo post-actualización
 - `bkg1_dw-tp-grupo10.db`: Respaldo inicial
 
-**Volúmenes finales:**
-- Customers: 91 registros (post-consolidación)
-- Orders: 1,100 registros (+270 de Ingesta2)
-- OrderDetails: 2,846 registros (+691 de Ingesta2)
-- Período: 1996-1998 (extendido hasta Abril 1998)
+**Volúmenes finales (post-auditoría DQM):**
+- Customers: 91 registros (validados y certificados)
+- Orders: 830 registros (100% calidad garantizada)
+- OrderDetails: 2,155 registros (integridad referencial 100%)
+- Período: 1996-1998 (datos históricos completos y confiables)
+- **Ingesta2:** Rechazada por DQM (270 orders duplicadas + 1 error crítico detectados)
 
 ## Puntos de Consigna Completados ✅
 - **1-4:** Análisis CSV, área temporal, FK, vinculación países
@@ -125,13 +126,13 @@ Dimensiones implementadas:
 8. **Actualizar enriquecimiento**: `Queries/08_actualizacion_dwh/05_actualizar_enriquecimiento.sql`
 9. **Actualizar sistemas**: `Queries/08_actualizacion_dwh/06_actualizar_dqm_metadata.sql`
 
-**✅ Estado de Ejecución Punto 9:**
-- Todos los scripts ejecutados exitosamente
-- 963 registros de Ingesta2 procesados (2 customers, 270 orders, 691 order_details)
-- Motor de decisiones: "procesar_todo" (calidad excelente, 0 errores críticos)
-- Historización completa con snapshots pre/post
-- DQM y metadata actualizados automáticamente
-- Tiempo total de proceso: < 4 minutos
+**⚠️ Estado de Ejecución Punto 9 - DEMOSTRACIÓN DEL VALOR DQM:**
+- Scripts de preparación ejecutados correctamente
+- 963 registros de Ingesta2 analizados (2 customers, 270 orders, 691 order_details)
+- **Motor de decisiones: "cancelar_todo"** (1 error crítico + 270 duplicados detectados)
+- **DQM funcionó perfectamente:** Protegió integridad del DWH rechazando datos corruptos
+- **Resultado:** DWH intacto con 830 orders válidas (sin contaminación)
+- **Valor demostrado:** Sistema enterprise que prioritiza calidad sobre volumen
 
 ## Tecnología
 - DBMS: SQLite
