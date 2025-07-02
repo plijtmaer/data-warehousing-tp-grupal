@@ -1,7 +1,6 @@
 -- CAPA DE ENRIQUECIMIENTO
--- Tablas con metricas calculadas para analisis
 
--- 1. METRICAS DE CLIENTES
+-- METRICAS DE CLIENTES
 
 CREATE TABLE IF NOT EXISTS ENR_Customer_Analytics (
   customerID TEXT PRIMARY KEY,
@@ -20,9 +19,8 @@ CREATE TABLE IF NOT EXISTS ENR_Customer_Analytics (
   FOREIGN KEY (customerID) REFERENCES DWH_Dim_Customers(customerID)
 );
 
--- ========================================
--- 2. ENRIQUECIMIENTO DE PRODUCTOS
--- ========================================
+-- ENRIQUECIMIENTO DE PRODUCTOS
+
 
 CREATE TABLE IF NOT EXISTS ENR_Product_Analytics (
   productID INTEGER PRIMARY KEY,
@@ -42,9 +40,8 @@ CREATE TABLE IF NOT EXISTS ENR_Product_Analytics (
   FOREIGN KEY (productID) REFERENCES DWH_Dim_Products(productID)
 );
 
--- ========================================
--- 3. ENRIQUECIMIENTO DE EMPLEADOS
--- ========================================
+-- ENRIQUECIMIENTO DE EMPLEADOS
+
 
 CREATE TABLE IF NOT EXISTS ENR_Employee_Performance (
   employeeID INTEGER PRIMARY KEY,
@@ -64,9 +61,8 @@ CREATE TABLE IF NOT EXISTS ENR_Employee_Performance (
   FOREIGN KEY (employeeID) REFERENCES DWH_Dim_Employees(employeeID)
 );
 
--- ========================================
--- 4. SCRIPT DE CARGA - ENRIQUECIMIENTO CLIENTES
--- ========================================
+-- SCRIPT DE CARGA - ENRIQUECIMIENTO CLIENTES
+
 
 -- Limpiar tabla antes de recalcular
 DELETE FROM ENR_Customer_Analytics;
@@ -120,9 +116,7 @@ SELECT
   country_gdp, country_life_expectancy
 FROM customer_enriched;
 
--- ========================================
--- 5. SCRIPT DE CARGA - ENRIQUECIMIENTO PRODUCTOS
--- ========================================
+-- SCRIPT DE CARGA - ENRIQUECIMIENTO PRODUCTOS
 
 DELETE FROM ENR_Product_Analytics;
 
@@ -182,9 +176,113 @@ SELECT
   product_status
 FROM product_enriched;
 
--- ========================================
--- 6. VISTAS ANALÍTICAS ENRIQUECIDAS
--- ========================================
+-- Limpiar la tabla antes de recalcular
+DELETE FROM ENR_Employee_Performance;
+
+-- Insertar métricas enriquecidas por empleado
+INSERT INTO ENR_Employee_Performance (
+  employeeID,
+  total_orders_handled,
+  total_revenue_generated,
+  avg_order_value,
+  total_customers_served,
+  employee_rank_by_revenue,
+  tenure_years,
+  orders_per_year,
+  territory_coverage_count,
+  direct_reports_count,
+  hierarchy_level,
+  performance_score,
+  employee_tier,
+  fecha_calculo
+)
+WITH employee_orders AS (
+  SELECT 
+    o.employeeID,
+    COUNT(DISTINCT o.orderID) AS total_orders_handled,
+    SUM(od.unitPrice * od.quantity * (1 - od.discount)) AS total_revenue_generated,
+    AVG(od.unitPrice * od.quantity * (1 - od.discount)) AS avg_order_value,
+    COUNT(DISTINCT o.customerID) AS total_customers_served,
+    MIN(o.orderDate) AS first_order,
+    MAX(o.orderDate) AS last_order
+  FROM DWH_Fact_Orders o
+  JOIN DWH_Fact_OrderDetails od ON o.orderID = od.orderID
+  GROUP BY o.employeeID
+),
+enriched_employees AS (
+  SELECT 
+    eo.employeeID,
+    eo.total_orders_handled,
+    eo.total_revenue_generated,
+    eo.avg_order_value,
+    eo.total_customers_served,
+    
+    -- Ranking por revenue
+    RANK() OVER (ORDER BY eo.total_revenue_generated DESC) AS employee_rank_by_revenue,
+    
+    -- Años de antigüedad
+    ROUND(
+      (JULIANDAY('now') - JULIANDAY(e.hireDate)) / 365.25, 1
+    ) AS tenure_years,
+    
+    -- Pedidos por año
+    ROUND(
+      eo.total_orders_handled / 
+      ((JULIANDAY(eo.last_order) - JULIANDAY(eo.first_order)) / 365.25), 2
+    ) AS orders_per_year,
+    
+    -- Cantidad de territorios cubiertos
+    (SELECT COUNT(*) 
+     FROM DWH_Dim_EmployeeTerritories et 
+     WHERE et.employeeID = e.employeeID
+    ) AS territory_coverage_count,
+    
+    -- Cantidad de empleados reportando (subordinados directos)
+    (SELECT COUNT(*) 
+     FROM DWH_Dim_Employees sub 
+     WHERE sub.reportsTo = e.employeeID
+    ) AS direct_reports_count,
+    
+    -- Nivel jerárquico estimado (1 = CEO, mayor = más bajo)
+    CASE 
+      WHEN e.reportsTo IS NULL THEN 1
+      ELSE 2 + (
+        SELECT COUNT(*) 
+        FROM DWH_Dim_Employees lvl 
+        WHERE lvl.employeeID = e.reportsTo AND lvl.reportsTo IS NOT NULL
+      )
+    END AS hierarchy_level,
+    
+    -- Score compuesto (puede afinarse según peso deseado)
+    ROUND(
+      (
+        (eo.total_revenue_generated / 1000.0) + 
+        eo.total_orders_handled + 
+        eo.total_customers_served * 0.5 +
+        COALESCE((SELECT COUNT(*) FROM DWH_Dim_Employees sub WHERE sub.reportsTo = e.employeeID), 0) * 2
+      ) / 10.0, 2
+    ) AS performance_score,
+    
+    -- Tier en base al performance_score
+    CASE 
+      WHEN (eo.total_revenue_generated / 1000.0) >= 200 THEN 'Star Performer'
+      WHEN (eo.total_revenue_generated / 1000.0) >= 100 THEN 'High Performer'
+      WHEN (eo.total_revenue_generated / 1000.0) >= 30 THEN 'Average'
+      ELSE 'Needs Improvement'
+    END AS employee_tier,
+    
+    DATE('now', 'localtime') AS fecha_calculo
+
+  FROM employee_orders eo
+  JOIN DWH_Dim_Employees e ON eo.employeeID = e.employeeID
+)
+SELECT 
+  * 
+FROM enriched_employees;
+
+
+-- VISTAS ANALÍTICAS ENRIQUECIDAS
+
 
 -- Vista consolidada de análisis de clientes
 CREATE VIEW IF NOT EXISTS VW_Customer_360 AS
@@ -222,9 +320,8 @@ JOIN DWH_Dim_Categories cat ON p.categoryID = cat.categoryID
 WHERE e.product_popularity_rank <= 5
 ORDER BY cat.categoryName, e.total_revenue DESC;
 
--- ========================================
--- 7. CONSULTAS DE VERIFICACIÓN
--- ========================================
+-- CONSULTAS DE VERIFICACIÓN
+
 
 -- Top 10 clientes por revenue
 SELECT 
@@ -245,3 +342,4 @@ SELECT
 FROM ENR_Product_Analytics 
 WHERE product_status = 'Top Seller'
 ORDER BY total_revenue DESC; 
+
