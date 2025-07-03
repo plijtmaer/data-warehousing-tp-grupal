@@ -126,6 +126,43 @@ Verificaciones implementadas:
 - Unicidad (duplicados en claves primarias)
 - Procesos de corrección documentados
 
+### Punto 8.5: Implementación Capa Staging (STG) - MEJORA ARQUITECTÓNICA
+**Archivos:** `Queries/03_stg_staging/`
+
+#### Arquitectura Mejorada
+Implementación de capa intermedia entre TMP y DWH:
+**TMP_ (RAW)** → **STG_ (STAGING)** → **DWH_ (DATA WAREHOUSE)**
+
+#### Transformaciones Aplicadas en STG
+
+**STG_WorldData2023 (195 países):**
+- ✅ **Países estandarizados**: "United States" → "USA", "United Kingdom" → "UK", "Republic of Ireland" → "Ireland"
+- ✅ **Encoding UTF-8 corregido**: "S���������" → "São Tomé and Príncipe", "Bras���" → "Brasília", "Bogot�" → "Bogotá"
+- ✅ **Campos numéricos limpios**: GDP y population sin símbolos "$" ni comas
+
+**STG_Products (77 productos):**
+- ✅ **Espacios normalizados**: "24 - 250 g  jars" → "24 - 250 g jars" (Producto ID 36)
+- ✅ **Caracteres especiales preservados**: Guaraná Fantástica, Gumbär Gummibärchen, Röd Kaviar
+
+**STG_Employees (9 empleados):**
+- ✅ **Jerarquía corregida**: Fix aplicado automáticamente, reportsTo con FK válidos
+- ✅ **VP único**: employeeID=2 sin jefe, resto con referencias correctas
+
+**Tablas copia directa (9 tablas):**
+STG_Customers, STG_Orders, STG_OrderDetails, STG_Categories, STG_Suppliers, STG_Shippers, STG_Regions, STG_Territories, STG_EmployeeTerritories
+
+#### Modificaciones DWH
+Todos los scripts DWH modificados para leer de STG_ en lugar de TMP_:
+- **Dimensiones**: 11 archivos `02_load.sql` actualizados
+- **Hechos**: 2 archivos `02_load.sql` actualizados
+
+#### Beneficios Logrados
+- ✅ **JOIN funcionando**: 91/91 customers con geografía (antes fallaban 21 por países inconsistentes)
+- ✅ **Datos uniformes**: Productos con formato consistente
+- ✅ **Vistas actualizadas**: VW_CustomerGeo ahora tiene 0 registros sin geografía
+- ✅ **Arquitectura limpia**: Separación clara entre raw data, staging y warehouse
+- ✅ **Transformaciones automáticas**: Sin necesidad de manual fixes en DWH
+
 #### 8b: Controles de Calidad de Integración  
 **Archivo:** `05_controles_calidad/02_calidad_integracion.sql`
 
@@ -152,10 +189,17 @@ El proceso de carga implementa un patrón de "fail-fast" donde los problemas se 
 
 1. **Creación de esquemas:** DQM, Memoria, Enriquecimiento
 2. **Controles de calidad:** Ingesta e integración  
-3. **Carga de dimensiones:** En orden de dependencias
-4. **Carga de hechos:** Orders, luego OrderDetails
-5. **Materialización:** Capas de enriquecimiento
-6. **Validaciones finales:** Integridad y consultas analíticas
+3. **🆕 Implementación STG:** Crear y poblar 12 tablas staging con transformaciones
+   - STG_WorldData2023: Países estandarizados + encoding corregido
+   - STG_Products: Limpieza de espacios
+   - STG_Employees: Fix jerárquico automático
+   - 9 tablas copia directa
+4. **Carga de dimensiones desde STG:** En orden de dependencias
+5. **Carga de hechos desde STG:** Orders, luego OrderDetails
+6. **Materialización:** Capas de enriquecimiento
+7. **Validaciones finales:** Integridad, vistas y consultas analíticas
+
+**🎯 Arquitectura Final:** TMP_ (3,506 registros) → STG_ (3,506 registros transformados) → DWH_ (modelo dimensional optimizado)
 
 ## Decisiones Técnicas
 
@@ -163,6 +207,7 @@ El proceso de carga implementa un patrón de "fail-fast" donde los problemas se 
 - **Incluidos:** Campos analíticamente relevantes (IDs, nombres, métricas, fechas)
 - **Excluidos:** Detalles operativos (extensions, fax, addresses detalladas)
 - **Calculados:** totalPrice, métricas de cliente, rankings de productos
+- **🆕 Transformados en STG:** Países estandarizados, encoding corregido, espacios normalizados
 
 ### Umbrales de Calidad
 - Completitud: 95-100% para campos obligatorios
@@ -174,7 +219,8 @@ El proceso de carga implementa un patrón de "fail-fast" donde los problemas se 
 - **DBMS:** SQLite
 - **Herramienta:** SQLite Studio
 - **Lenguaje:** SQL estándar
-- **Arquitectura:** Esquema único con prefijos (TMP_, DWH_, DQM_, MEM_, ENR_)
+- **Arquitectura:** Esquema único con prefijos (TMP_, STG_, DWH_, DQM_, MEM_, ENR_)
+- **🆕 Pipeline de datos:** TMP_ (raw) → STG_ (staging transformado) → DWH_ (dimensional)
 
 ## Análisis de Datos e Insights
 

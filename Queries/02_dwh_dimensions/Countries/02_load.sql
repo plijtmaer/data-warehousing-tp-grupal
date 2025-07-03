@@ -1,7 +1,7 @@
 -- Limpieza previa de registros duplicados
 DELETE FROM DWH_Dim_Countries;
 
--- Inserción desde TMP_WorldData2023
+-- Inserción desde STG_WorldData2023 (con correcciones de países y encoding)
 INSERT INTO DWH_Dim_Countries (
   country,
   population,
@@ -17,4 +17,4 @@ SELECT
   life_expectancy,
   latitude,
   longitude
-FROM TMP_WorldData2023;
+FROM STG_WorldData2023;

@@ -23,18 +23,37 @@ Data Warehouse implementado en SQLite con datos de Northwind y archivo de paíse
 - `04_dqm_esquema.sql`: Sistema de control de calidad (DQM)
 - `05_metadata_dqm_capas.sql`: Metadata de nuevas capas
 
+#### 2.5. Capa Staging (STG)
+**Archivos:** `Queries/03_stg_staging/`
+
+Capa intermedia implementada entre TMP y DWH con:
+- **STG_WorldData2023**: Países estandarizados (USA, UK, Ireland) + encoding corregido (São Tomé, Brasília, etc.)
+- **STG_Products**: Limpieza de espacios extra en quantityPerUnit
+- **STG_Employees**: Fix jerárquico aplicado (reportsTo corregido)
+- **9 tablas copia directa**: Customers, Orders, OrderDetails, Categories, Suppliers, Shippers, Regions, Territories, EmployeeTerritories
+
+**Arquitectura:** TMP_ (RAW) → STG_ (STAGING) → DWH_ (DATA WAREHOUSE)
+
+**Beneficios logrados:**
+- ✅ JOIN Countries-Customers funcionando: 91/91 customers con geografía (antes fallaban 21)
+- ✅ Productos con formato uniforme y caracteres especiales preservados  
+- ✅ Jerarquía de empleados válida sin dependencias circulares
+- ✅ Vistas actualizadas automáticamente (VW_CustomerGeo: 0 registros sin geografía)
+
 #### 3. Dimensiones DWH
 Cada dimensión tiene dos archivos:
 - `01_create.sql`: Creación de la tabla
-- `02_load.sql`: Carga de datos desde staging
+- `02_load.sql`: Carga de datos desde capa STG (modificado para leer STG_ en lugar de TMP_)
 
-Dimensiones implementadas:
-- Customers, Employees, Products, Suppliers, Categories
-- Regions, Territories, Countries, Time, Shippers
+Dimensiones implementadas (ahora leen de STG_):
+- **Countries**: Con países estandarizados y encoding corregido
+- **Products**: Con espacios normalizados y caracteres especiales preservados
+- **Employees**: Con jerarquía corregida desde STG_Employees
+- Customers, Suppliers, Categories, Regions, Territories, Time, Shippers
 
 #### 4. Hechos DWH
-- `Orders/`: Tabla de hechos a nivel pedido
-- `OrderDetails/`: Tabla de hechos a nivel producto por pedido
+- `Orders/`: Tabla de hechos a nivel pedido (modificado para leer STG_Orders)
+- `OrderDetails/`: Tabla de hechos a nivel producto por pedido (modificado para leer STG_OrderDetails)
 
 #### 5. Controles de Calidad
 - `01_calidad_ingesta.sql`: Completitud, formatos, outliers, unicidad
@@ -87,11 +106,15 @@ Dimensiones implementadas:
 - `bg2_dw-tp-grupo10.db`: Respaldo post-actualización
 - `bkg1_dw-tp-grupo10.db`: Respaldo inicial
 
-**Volúmenes finales (post-auditoría DQM):**
-- Customers: 91 registros (validados y certificados)
+**Volúmenes finales (post-auditoría DQM + STG):**
+- **Capa STG**: 3,506 registros totales en 12 tablas con transformaciones aplicadas
+- **DWH Customers**: 91 registros (validados, certificados, 100% con geografía)
+- **DWH Countries**: 195 países (con USA, UK, Ireland corregidos + encoding UTF-8)
+- **DWH Products**: 77 productos (con espacios normalizados, caracteres especiales preservados)
 - Orders: 830 registros (100% calidad garantizada)
 - OrderDetails: 2,155 registros (integridad referencial 100%)
 - Período: 1996-1998 (datos históricos completos y confiables)
+- **Vistas funcionando**: VW_CustomerGeo 91/91 customers con geografía (antes 70/91)
 - **Ingesta2:** Rechazada por DQM (270 orders duplicadas + 1 error crítico detectados)
 
 ## Puntos de Consigna Completados ✅
@@ -106,14 +129,19 @@ Dimensiones implementadas:
 
 ## Orden de Ejecución
 
-### Carga Inicial (Puntos 1-8)
+### Carga Inicial (Puntos 1-8) + Implementación STG
 1. Crear tablas DQM, memoria, enriquecimiento
 2. Actualizar metadata completa
-3. Ejecutar controles de calidad (verificar umbrales)
-4. Cargar dimensiones en orden de dependencias
-5. Cargar tablas de hechos
-6. Materializar capas de enriquecimiento
-7. Ejecutar validaciones finales
+3. **Implementar capa STG**: Crear y poblar 12 tablas STG_ con transformaciones
+   - STG_WorldData2023: Países estandarizados + encoding corregido
+   - STG_Products: Limpieza de espacios
+   - STG_Employees: Fix jerárquico
+   - 9 tablas copia directa del resto
+4. Ejecutar controles de calidad (verificar umbrales)
+5. Cargar dimensiones desde STG_ en orden de dependencias
+6. Cargar tablas de hechos desde STG_
+7. Materializar capas de enriquecimiento
+8. Ejecutar validaciones finales y verificar vistas
 
 ### Actualización Ingesta2 (Punto 9)
 1. **Preparar área temporal**: `Adquisición/ingesta2_area_temporal.sql`

@@ -1,13 +1,13 @@
 -- Control: verificar ordenes a cargar
-SELECT COUNT(*) as total_orders FROM TMP_Orders;
+SELECT COUNT(*) as total_orders FROM STG_Orders;
 
 -- Control: verificar ordenes sin customer
-SELECT COUNT(*) as orders_sin_customer FROM TMP_Orders WHERE customerID IS NULL;
+SELECT COUNT(*) as orders_sin_customer FROM STG_Orders WHERE customerID IS NULL;
 
 -- Limpieza previa de la tabla para evitar duplicados
 DELETE FROM DWH_Fact_Orders;
 
--- Inserción de datos desde la tabla de staging 'orders'
+-- Inserción de datos desde STG_Orders (staging layer)
 INSERT INTO DWH_Fact_Orders (
   orderID,
   customerID,
@@ -27,7 +27,7 @@ SELECT
   requiredDate,
   shippedDate,
   freight
-FROM TMP_Orders;
+FROM STG_Orders;
 
 -- Control posterior: verificar carga de orders
 SELECT COUNT(*) as orders_cargadas FROM DWH_Fact_Orders;

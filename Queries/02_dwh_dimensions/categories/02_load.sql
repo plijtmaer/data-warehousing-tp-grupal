@@ -1,13 +1,14 @@
--- Limpieza previa: elimina los registros con categoryID ya existentes para evitar duplicados
+-- Control previo
+SELECT COUNT(*) as total_categories FROM STG_Categories;
 
-DELETE FROM DWH_Dim_Categories
-WHERE categoryID IN (SELECT categoryID FROM TMP_Categories);
+-- Limpieza previa
+DELETE FROM DWH_Dim_Categories;
 
-
--- Inserción de datos desde TMP_Categories
+-- Inserción desde STG_Categories
 INSERT INTO DWH_Dim_Categories
 SELECT
-  categoryID,
-  categoryName,
-  description
-FROM TMP_Categories;
+	categoryID,
+	categoryName,
+	description,
+	picture
+FROM STG_Categories;

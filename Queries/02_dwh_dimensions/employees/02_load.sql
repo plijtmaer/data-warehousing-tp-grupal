@@ -1,8 +1,8 @@
 -- Limpieza previa: elimina los registros con employeeID ya existentes para evitar duplicados
 DELETE FROM DWH_Dim_Employees
-WHERE employeeID IN (SELECT employeeID FROM TMP_Employees_Fix);
+WHERE employeeID IN (SELECT employeeID FROM STG_Employees);
 
--- Inserción de empleados desde la tabla corregida con jerarquía válida
+-- Inserción de empleados desde STG_Employees (con jerarquía válida corregida)
 INSERT INTO DWH_Dim_Employees (
   employeeID,
   lastName,
@@ -38,4 +38,4 @@ SELECT
   extension,
   notes,
   reportsTo
-FROM TMP_Employees_Fix;
+FROM STG_Employees;
