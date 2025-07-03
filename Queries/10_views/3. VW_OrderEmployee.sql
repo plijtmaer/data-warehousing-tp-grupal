@@ -1,7 +1,7 @@
 DROP VIEW IF EXISTS VW_OrderEmployee;
 
 CREATE VIEW VW_OrderEmployee AS
-SELECT
+SELECT DISTINCT
   o.orderID,
   e.employeeID,
   e.firstName || ' ' || e.lastName AS empleado_nombre,

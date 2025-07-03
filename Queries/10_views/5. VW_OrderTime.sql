@@ -1,7 +1,7 @@
 DROP VIEW IF EXISTS VW_OrderTime;
 
 CREATE VIEW VW_OrderTime AS
-SELECT
+SELECT DISTINCT
   o.orderID,
   t.date,
   t.year,

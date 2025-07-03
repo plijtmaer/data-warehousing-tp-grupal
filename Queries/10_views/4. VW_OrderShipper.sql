@@ -1,7 +1,7 @@
 DROP VIEW IF EXISTS VW_OrderShipper;
 
 CREATE VIEW VW_OrderShipper AS
-SELECT
+SELECT DISTINCT
   o.orderID,
   s.shipperID,
   s.companyName AS empresa_envio,
